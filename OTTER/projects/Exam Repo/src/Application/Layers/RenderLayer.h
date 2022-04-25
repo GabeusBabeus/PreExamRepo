@@ -9,7 +9,10 @@
 
 ENUM_FLAGS(RenderFlags, uint32_t,
 	None = 0,
-	EnableColorCorrection = 1 << 0
+	EnableColorCorrection = 1 << 0,
+	EnableSpecular = 1 << 1,
+	EnableAmbient = 1 << 2,
+	EnableDiffuse = 1 << 3,
 );
 
 class RenderLayer final : public ApplicationLayer {
@@ -118,6 +121,7 @@ public:
 
 	// Inherited from ApplicationLayer
 
+	virtual void OnUpdate() override;
 	virtual void OnAppLoad(const nlohmann::json& config) override;
 	virtual void OnPreRender() override;
 	virtual void OnRender(const Framebuffer::Sptr& prevLayer) override;
@@ -125,6 +129,11 @@ public:
 	virtual void OnWindowResize(const glm::ivec2& oldSize, const glm::ivec2& newSize) override;
 
 protected:
+	bool enable_Specular = false;
+	bool enable_Ambient = true;
+	bool enable_Diffuse = true;
+
+
 	Framebuffer::Sptr   _primaryFBO;
 	Framebuffer::Sptr   _lightingFBO;
 	Framebuffer::Sptr   _outputBuffer;
