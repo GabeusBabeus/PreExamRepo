@@ -139,7 +139,7 @@ void DefaultSceneLayer::OnUpdate()
 		}
 		else if (randomDir == 3)
 		{
-			enemy->Get<Gameplay::Physics::RigidBody>()->ApplyImpulse(glm::vec3(0.0f, 0.0f, 1.0f));
+			enemy->Get<Gameplay::Physics::RigidBody>()->ApplyImpulse(glm::vec3(0.0f, 0.0f, 0.5f));
 			moveTimer = 0.0f;
 		}
 	}
