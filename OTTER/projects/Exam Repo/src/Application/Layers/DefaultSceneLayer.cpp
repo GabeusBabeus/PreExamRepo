@@ -434,14 +434,18 @@ void DefaultSceneLayer::_CreateScene()
 		Gameplay::GameObject::Sptr shadow = scene->CreateGameObject("Shadowlight");
 		{
 			//Set Position
-			shadow->SetPostion(glm::vec3(0.5f, 0.5f, 2.0f));
+			shadow->SetPostion(glm::vec3(-0.370f, -1.0f, 18.0f));
 			shadow->LookAt(glm::vec3(0.0f));
 
 			ShadowCamera::Sptr shadowCam = shadow->Add<ShadowCamera>();
-			shadowCam->Flags = ShadowFlags::PcfEnabled;
+			shadowCam->Flags = ShadowFlags::PcfEnabled | ShadowFlags::AttenuationEnabled;
+			shadowCam->Bias = 0.000001f;
 
-			shadowCam->SetProjection(glm::perspective(glm::radians(60.0f), 1.0f, 0.5f, 100.0f));
-			shadowCam->Intensity = 6.5f;
+
+			shadowCam->SetProjection(glm::perspective(glm::radians(120.0f), 1.0f, 0.4f, 100.0f));
+			shadowCam->Intensity = 7.5f;
+
+			
 		}
 
 
@@ -459,7 +463,7 @@ void DefaultSceneLayer::_CreateScene()
 		// Set up the scene's camera
 		GameObject::Sptr camera = scene->MainCamera->GetGameObject()->SelfRef();
 		{
-			camera->SetPostion({ 0, -7.2, 7.5 });
+			camera->SetPostion(glm::vec3( 0.0f, -6.0f, 7.0f));
 			camera->SetRotation(glm::vec3(90.0f, 0.0f, 0.0f));
 			//camera->LookAt(glm::vec3(0.0f));
 
@@ -752,16 +756,7 @@ void DefaultSceneLayer::_CreateScene()
 			trigger->Add<TriggerVolumeEnterBehaviour>();
 		}
 
-		GameObject::Sptr shadowCaster = scene->CreateGameObject("Shadow Light");
-		{
-			// Set position in the scene
-			shadowCaster->SetPostion(glm::vec3(3.0f, 3.0f, 5.0f));
-			shadowCaster->LookAt(glm::vec3(0.0f));
-
-			// Create and attach a renderer for the monkey
-			ShadowCamera::Sptr shadowCam = shadowCaster->Add<ShadowCamera>();
-			shadowCam->SetProjection(glm::perspective(glm::radians(120.0f), 1.0f, 0.1f, 100.0f));
-		}
+		
 
 		/////////////////////////// UI //////////////////////////////
 		

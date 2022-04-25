@@ -129,7 +129,7 @@ public:
 	virtual void OnWindowResize(const glm::ivec2& oldSize, const glm::ivec2& newSize) override;
 
 protected:
-	bool enable_Specular = false;
+	bool enable_Specular = true;
 	bool enable_Ambient = true;
 	bool enable_Diffuse = true;
 
