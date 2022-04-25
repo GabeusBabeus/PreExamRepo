@@ -8,6 +8,8 @@
 #include "PostProcessing/BoxFilter5x5.h"
 #include "PostProcessing/OutlineEffect.h"
 #include "PostProcessing/DepthOfField.h"
+#include "PostProcessing/FilmGrainEffect.h"
+#include "PostProcessing/NightEffect.h"
 #include "PostProcessing/Inverse.h"
 
 PostProcessingLayer::PostProcessingLayer() :
@@ -35,6 +37,8 @@ void PostProcessingLayer::OnAppLoad(const nlohmann::json& config)
 	//_effects.push_back(std::make_shared<BoxFilter5x5>());
 	//_effects.push_back(std::make_shared<OutlineEffect>());
 	_effects.push_back(std::make_shared<DepthOfField>());
+	_effects.push_back(std::make_shared<NightEffect>());
+	_effects.push_back(std::make_shared<FilmGrainEffect>()); 
 	_effects.push_back(std::make_shared<Inverse>());
 
 
