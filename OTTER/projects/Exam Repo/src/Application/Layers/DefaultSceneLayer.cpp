@@ -79,13 +79,33 @@ DefaultSceneLayer::DefaultSceneLayer() :
 	ApplicationLayer()
 {
 	Name = "Default Scene";
-	Overrides = AppLayerFunctions::OnAppLoad;
+	Overrides = AppLayerFunctions::OnAppLoad|AppLayerFunctions::OnUpdate;
 }
 
 DefaultSceneLayer::~DefaultSceneLayer() = default;
 
 void DefaultSceneLayer::OnAppLoad(const nlohmann::json& config) {
 	_CreateScene();
+}
+
+double preFrame = glfwGetTime();
+
+void DefaultSceneLayer::OnUpdate()
+{
+	Application& app = Application::Get();
+	currScene = app.CurrentScene();
+
+	double currFrame = glfwGetTime();
+	float dt = static_cast<float>(currFrame - preFrame);
+
+	if (InputEngine::GetKeyState(GLFW_KEY_SPACE) == ButtonState::Pressed)
+	{
+		if (currScene->IsPlaying == false)
+		{
+			currScene->IsPlaying = true;
+		}
+	}
+
 }
 
 void DefaultSceneLayer::_CreateScene()
@@ -140,11 +160,16 @@ void DefaultSceneLayer::_CreateScene()
 		// Load in the meshes
 		MeshResource::Sptr monkeyMesh = ResourceManager::CreateAsset<MeshResource>("Monkey.obj");
 		MeshResource::Sptr shipMesh   = ResourceManager::CreateAsset<MeshResource>("fenrir.obj");
+		MeshResource::Sptr goblinMesh = ResourceManager::CreateAsset<MeshResource>("GoblinRun_000001.obj");
+		MeshResource::Sptr zombieMesh = ResourceManager::CreateAsset<MeshResource>("ZombieRun_000001.obj");
 
 		// Load in some textures
-		Texture2D::Sptr    boxTexture   = ResourceManager::CreateAsset<Texture2D>("textures/box-diffuse.png");
+		Texture2D::Sptr    boxTexture   = ResourceManager::CreateAsset<Texture2D>("textures/DarkWall.jpg");
+		Texture2D::Sptr    wallTexture = ResourceManager::CreateAsset<Texture2D>("textures/LightWall.jpg");
 		Texture2D::Sptr    boxSpec      = ResourceManager::CreateAsset<Texture2D>("textures/box-specular.png");
 		Texture2D::Sptr    monkeyTex    = ResourceManager::CreateAsset<Texture2D>("textures/monkey-uvMap.png");
+		Texture2D::Sptr    goblinTex = ResourceManager::CreateAsset<Texture2D>("textures/GoblinUVComp.png");
+		Texture2D::Sptr    zombieTex = ResourceManager::CreateAsset<Texture2D>("textures/ZombieUVblood.png");
 		Texture2D::Sptr    leafTex      = ResourceManager::CreateAsset<Texture2D>("textures/leaves.png");
 		leafTex->SetMinFilter(MinFilter::Nearest);
 		leafTex->SetMagFilter(MagFilter::Nearest);
@@ -216,6 +241,30 @@ void DefaultSceneLayer::_CreateScene()
 			boxMaterial->Set("u_Material.AlbedoMap", boxTexture);
 			boxMaterial->Set("u_Material.Shininess", 0.1f);
 			boxMaterial->Set("u_Material.NormalMap", normalMapDefault);
+		}
+
+		Material::Sptr goblinMaterial = ResourceManager::CreateAsset<Material>(deferredForward);
+		{
+			goblinMaterial->Name = "Goblin";
+			goblinMaterial->Set("u_Material.AlbedoMap", goblinTex);
+			goblinMaterial->Set("u_Material.Shininess", 0.1f);
+			goblinMaterial->Set("u_Material.NormalMap", normalMapDefault);
+		}
+
+		Material::Sptr zombieMaterial = ResourceManager::CreateAsset<Material>(deferredForward);
+		{
+			zombieMaterial->Name = "Zombie";
+			zombieMaterial->Set("u_Material.AlbedoMap", zombieTex);
+			zombieMaterial->Set("u_Material.Shininess", 0.1f);
+			zombieMaterial->Set("u_Material.NormalMap", normalMapDefault);
+		}
+
+		Material::Sptr wallMaterial = ResourceManager::CreateAsset<Material>(deferredForward);
+		{
+			wallMaterial->Name = "Wall";
+			wallMaterial->Set("u_Material.AlbedoMap", wallTexture);
+			wallMaterial->Set("u_Material.Shininess", 0.1f);
+			wallMaterial->Set("u_Material.NormalMap", normalMapDefault);
 		}
 
 		// This will be the reflective material, we'll make the whole thing 90% reflective
@@ -302,6 +351,8 @@ void DefaultSceneLayer::_CreateScene()
 			whiteBrick->Set("u_Material.NormalMap", ResourceManager::CreateAsset<Texture2D>("textures/normal_map.png"));
 		}
 
+
+
 		Material::Sptr normalmapMat = ResourceManager::CreateAsset<Material>(deferredForward);
 		{
 			Texture2D::Sptr normalMap       = ResourceManager::CreateAsset<Texture2D>("textures/normal_map.png");
@@ -354,10 +405,11 @@ void DefaultSceneLayer::_CreateScene()
 		// Set up the scene's camera
 		GameObject::Sptr camera = scene->MainCamera->GetGameObject()->SelfRef();
 		{
-			camera->SetPostion({ -3, -1, 5 });
-			camera->LookAt(glm::vec3(0.0f));
+			camera->SetPostion({ 0, -7.2, 7.5 });
+			camera->SetRotation(glm::vec3(90.0f, 0.0f, 0.0f));
+			//camera->LookAt(glm::vec3(0.0f));
 
-			camera->Add<SimpleCameraControl>();
+			//camera->Add<SimpleCameraControl>();
 
 			// This is now handled by scene itself!
 			//Camera::Sptr cam = camera->Add<Camera>();
@@ -367,6 +419,8 @@ void DefaultSceneLayer::_CreateScene()
 
 
 		// Set up all our sample objects
+
+
 		GameObject::Sptr plane = scene->CreateGameObject("Plane");
 		{
 			// Make a big tiled mesh
@@ -378,12 +432,10 @@ void DefaultSceneLayer::_CreateScene()
 			RenderComponent::Sptr renderer = plane->Add<RenderComponent>();
 			renderer->SetMesh(tiledMesh);
 			renderer->SetMaterial(boxMaterial);
-
-			// Attach a plane collider that extends infinitely along the X/Y axis
-			RigidBody::Sptr physics = plane->Add<RigidBody>(/*static by default*/);
-			physics->AddCollider(BoxCollider::Create(glm::vec3(50.0f, 50.0f, 1.0f)))->SetPosition({ 0,0,-1 });
+			plane->SetRotation(glm::vec3(90.0f, 90.0f, 0.0f));
+			plane->SetPostion(glm::vec3(0.0f, 0.5f, 0.0f));
 		}
-
+		
 		// Add some walls :3
 		{
 			MeshResource::Sptr wall = ResourceManager::CreateAsset<MeshResource>();
@@ -391,50 +443,67 @@ void DefaultSceneLayer::_CreateScene()
 			wall->GenerateMesh();
 
 			GameObject::Sptr wall1 = scene->CreateGameObject("Wall1");
-			wall1->Add<RenderComponent>()->SetMesh(wall)->SetMaterial(whiteBrick);
+			wall1->Add<RenderComponent>()->SetMesh(wall)->SetMaterial(wallMaterial);
 			wall1->SetScale(glm::vec3(20.0f, 1.0f, 3.0f));
-			wall1->SetPostion(glm::vec3(0.0f, 10.0f, 1.5f));
-			plane->AddChild(wall1);
+			wall1->SetPostion(glm::vec3(0.0f, 0.0f, 14.0f));
+			RigidBody::Sptr wall1Phy = wall1->Add<RigidBody>(RigidBodyType::Static);
+			wall1Phy->AddCollider(BoxCollider::Create(glm::vec3(10.0f, 0.5f, 1.5f)));
+			//plane->AddChild(wall1);
 
 			GameObject::Sptr wall2 = scene->CreateGameObject("Wall2");
-			wall2->Add<RenderComponent>()->SetMesh(wall)->SetMaterial(whiteBrick);
+			wall2->Add<RenderComponent>()->SetMesh(wall)->SetMaterial(wallMaterial);
 			wall2->SetScale(glm::vec3(20.0f, 1.0f, 3.0f));
-			wall2->SetPostion(glm::vec3(0.0f, -10.0f, 1.5f));
-			plane->AddChild(wall2);
+			wall2->SetPostion(glm::vec3(0.0f, 0.0f, 1.5f));
+			RigidBody::Sptr wall2Phy = wall2->Add<RigidBody>(RigidBodyType::Static);
+			wall2Phy->AddCollider(BoxCollider::Create(glm::vec3(10.0f, 0.5f, 1.5f)));
+			//plane->AddChild(wall2);
 
 			GameObject::Sptr wall3 = scene->CreateGameObject("Wall3");
-			wall3->Add<RenderComponent>()->SetMesh(wall)->SetMaterial(whiteBrick);
-			wall3->SetScale(glm::vec3(1.0f, 20.0f, 3.0f));
-			wall3->SetPostion(glm::vec3(10.0f, 0.0f, 1.5f));
-			plane->AddChild(wall3);
+			wall3->Add<RenderComponent>()->SetMesh(wall)->SetMaterial(wallMaterial);
+			wall3->SetScale(glm::vec3(3.0f, 1.0f, 15.5f));
+			wall3->SetPostion(glm::vec3(11.5f, 0.0f, 7.77f));
+			RigidBody::Sptr wall3Phy = wall3->Add<RigidBody>(RigidBodyType::Static);
+			wall3Phy->AddCollider(BoxCollider::Create(glm::vec3(1.5f, 0.5f, 7.75f)));
+			//plane->AddChild(wall3);
 
 			GameObject::Sptr wall4 = scene->CreateGameObject("Wall4");
-			wall4->Add<RenderComponent>()->SetMesh(wall)->SetMaterial(whiteBrick);
-			wall4->SetScale(glm::vec3(1.0f, 20.0f, 3.0f));
-			wall4->SetPostion(glm::vec3(-10.0f, 0.0f, 1.5f));
-			plane->AddChild(wall4);
+			wall4->Add<RenderComponent>()->SetMesh(wall)->SetMaterial(wallMaterial);
+			wall4->SetScale(glm::vec3(3.0f, 1.0f, 15.5f));
+			wall4->SetPostion(glm::vec3(-11.5f, 0.0f, 7.77f));
+			RigidBody::Sptr wall4Phy = wall4->Add<RigidBody>(RigidBodyType::Static);
+			wall4Phy->AddCollider(BoxCollider::Create(glm::vec3(1.5f, 0.5f, 7.75f)));
+			//plane->AddChild(wall4);
 		}
 
-		GameObject::Sptr monkey1 = scene->CreateGameObject("Monkey 1");
+		GameObject::Sptr pc = scene->CreateGameObject("PC");
 		{
-			// Set position in the scene
-			monkey1->SetPostion(glm::vec3(1.5f, 0.0f, 1.0f));
+			RenderComponent::Sptr renderer = pc->Add<RenderComponent>();
+			renderer->SetMesh(goblinMesh);
+			renderer->SetMaterial(goblinMaterial);
 
-			// Add some behaviour that relies on the physics body
-			monkey1->Add<JumpBehaviour>();
+			pc->SetPostion(glm::vec3(-8.0f, 0.0f, 3.0f));
+			pc->SetRotation(glm::vec3(90.0f, 0.0f, 90.0f));
 
-			// Create and attach a renderer for the monkey
-			RenderComponent::Sptr renderer = monkey1->Add<RenderComponent>();
-			renderer->SetMesh(monkeyMesh);
-			renderer->SetMaterial(monkeyMaterial);
-
-			// Example of a trigger that interacts with static and kinematic bodies as well as dynamic bodies
-			TriggerVolume::Sptr trigger = monkey1->Add<TriggerVolume>();
-			trigger->SetFlags(TriggerTypeFlags::Statics | TriggerTypeFlags::Kinematics);
-			trigger->AddCollider(BoxCollider::Create(glm::vec3(1.0f)));
-
-			monkey1->Add<TriggerVolumeEnterBehaviour>();
+			RigidBody::Sptr pcPhy = pc->Add<RigidBody>(RigidBodyType::Dynamic);
+			pcPhy->AddCollider(BoxCollider::Create(glm::vec3(0.5f, 1.0f, 0.5f)))->SetPosition({0,1,0});
+			pcPhy->SetMass(0.1f);
+			pcPhy->SetAngularDamping(0.9f);
+			pcPhy->SetLinearDamping(0.9f);
+			pc->Add<JumpBehaviour>();
 		}
+
+		GameObject::Sptr enemy = scene->CreateGameObject("Enemy");
+		{
+			RenderComponent::Sptr renderer = enemy->Add<RenderComponent>();
+			renderer->SetMesh(zombieMesh);
+			renderer->SetMaterial(zombieMaterial);
+
+			enemy->SetPostion(glm::vec3(8.0f, 0.0f, 3.0f));
+			enemy->SetRotation(glm::vec3(90.0f, 0.0f, -90.0f));
+		}
+
+
+		/*
 
 		GameObject::Sptr ship = scene->CreateGameObject("Fenrir");
 		{
@@ -612,7 +681,7 @@ void DefaultSceneLayer::_CreateScene()
 
 			demoBase->AddChild(normalMapBall);
 		}
-
+		*/
 		// Create a trigger volume for testing how we can detect collisions with objects!
 		GameObject::Sptr trigger = scene->CreateGameObject("Trigger");
 		{
@@ -637,6 +706,7 @@ void DefaultSceneLayer::_CreateScene()
 
 		/////////////////////////// UI //////////////////////////////
 		
+		/*
 		GameObject::Sptr canvas = scene->CreateGameObject("UI Canvas"); 
 		{
 			RectTransform::Sptr transform = canvas->Add<RectTransform>();
@@ -670,6 +740,7 @@ void DefaultSceneLayer::_CreateScene()
 			canvas->AddChild(subPanel);
 		}
 		
+		
 
 		GameObject::Sptr particles = scene->CreateGameObject("Particles"); 
 		{
@@ -692,7 +763,7 @@ void DefaultSceneLayer::_CreateScene()
 
 			particleManager->AddEmitter(emitter);
 		}
-
+		*/
 		GuiBatcher::SetDefaultTexture(ResourceManager::CreateAsset<Texture2D>("textures/ui-sprite.png"));
 		GuiBatcher::SetDefaultBorderRadius(8);
 
