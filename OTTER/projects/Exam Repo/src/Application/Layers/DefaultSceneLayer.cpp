@@ -89,6 +89,8 @@ void DefaultSceneLayer::OnAppLoad(const nlohmann::json& config) {
 }
 
 double preFrame = glfwGetTime();
+float moveTimer = 0.0f;
+int randomDir = 0;
 
 void DefaultSceneLayer::OnUpdate()
 {
@@ -98,11 +100,47 @@ void DefaultSceneLayer::OnUpdate()
 	double currFrame = glfwGetTime();
 	float dt = static_cast<float>(currFrame - preFrame);
 
-	if (InputEngine::GetKeyState(GLFW_KEY_SPACE) == ButtonState::Pressed)
+	Gameplay::GameObject::Sptr intro = currScene->FindObjectByName("Intro");
+
+	Gameplay::GameObject::Sptr pc = currScene->FindObjectByName("PC");
+	Gameplay::GameObject::Sptr enemy = currScene->FindObjectByName("Enemy");
+
+	if (InputEngine::GetKeyState(GLFW_KEY_ENTER) == ButtonState::Pressed)
 	{
 		if (currScene->IsPlaying == false)
 		{
 			currScene->IsPlaying = true;
+			intro->SetEnabled(false);
+		}
+	}
+
+	if (InputEngine::GetKeyState(GLFW_KEY_A) == ButtonState::Down)
+	{
+		pc->Get<Gameplay::Physics::RigidBody>()->ApplyImpulse(glm::vec3(-0.05f, 0.0f, 0.0f));
+	}
+	if (InputEngine::GetKeyState(GLFW_KEY_D) == ButtonState::Down)
+	{
+		pc->Get<Gameplay::Physics::RigidBody>()->ApplyImpulse(glm::vec3(0.05f, 0.0f, 0.0f));
+	}
+
+	moveTimer += dt;
+	if (moveTimer >= 3000.0f)
+	{
+		randomDir = rand() % 3 + 1;
+		if (randomDir == 1)
+		{
+			enemy->Get<Gameplay::Physics::RigidBody>()->ApplyImpulse(glm::vec3(0.5f, 0.0f, 0.0f));
+			moveTimer = 0.0f;
+		}
+		else if (randomDir == 2)
+		{
+			enemy->Get<Gameplay::Physics::RigidBody>()->ApplyImpulse(glm::vec3(-0.5f, 0.0f, 0.0f));
+			moveTimer = 0.0f;
+		}
+		else if (randomDir == 3)
+		{
+			enemy->Get<Gameplay::Physics::RigidBody>()->ApplyImpulse(glm::vec3(0.0f, 0.0f, 1.0f));
+			moveTimer = 0.0f;
 		}
 	}
 
@@ -506,6 +544,7 @@ void DefaultSceneLayer::_CreateScene()
 			pcPhy->SetAngularDamping(0.9f);
 			pcPhy->SetLinearDamping(0.9f);
 			pc->Add<JumpBehaviour>();
+			pc->Add<TriggerVolumeEnterBehaviour>();
 		}
 
 		GameObject::Sptr enemy = scene->CreateGameObject("Enemy");
@@ -516,6 +555,12 @@ void DefaultSceneLayer::_CreateScene()
 
 			enemy->SetPostion(glm::vec3(8.0f, 0.0f, 3.0f));
 			enemy->SetRotation(glm::vec3(90.0f, 0.0f, -90.0f));
+
+			RigidBody::Sptr enemyPhy = enemy->Add<RigidBody>(RigidBodyType::Dynamic);
+			enemyPhy->AddCollider(BoxCollider::Create(glm::vec3(0.5f, 1.0f, 0.5f)))->SetPosition({ 0,1,0 });
+			enemyPhy->SetMass(0.1f);
+			enemyPhy->SetAngularDamping(0.9f);
+			enemyPhy->SetLinearDamping(0.9f);
 		}
 
 
@@ -720,42 +765,21 @@ void DefaultSceneLayer::_CreateScene()
 
 		/////////////////////////// UI //////////////////////////////
 		
-		/*
-		GameObject::Sptr canvas = scene->CreateGameObject("UI Canvas"); 
+		
+		GameObject::Sptr canvas = scene->CreateGameObject("Intro"); 
 		{
 			RectTransform::Sptr transform = canvas->Add<RectTransform>();
 			transform->SetMin({ 16, 16 });
 			transform->SetMax({ 128, 128 });
 
-			GuiPanel::Sptr canPanel = canvas->Add<GuiPanel>();
+			transform->SetPosition(glm::vec2(800.0f, 200.0f));
 
-
-			GameObject::Sptr subPanel = scene->CreateGameObject("Sub Item");
-			{
-				RectTransform::Sptr transform = subPanel->Add<RectTransform>();
-				transform->SetMin({ 10, 10 });
-				transform->SetMax({ 64, 64 });
-
-				GuiPanel::Sptr panel = subPanel->Add<GuiPanel>();
-				panel->SetColor(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-
-				panel->SetTexture(ResourceManager::CreateAsset<Texture2D>("textures/upArrow.png"));
-
-				Font::Sptr font = ResourceManager::CreateAsset<Font>("fonts/Roboto-Medium.ttf", 16.0f);
-				font->Bake();
-
-				GuiText::Sptr text = subPanel->Add<GuiText>();
-				text->SetText("Hello world!");
-				text->SetFont(font);
-
-				monkey1->Get<JumpBehaviour>()->Panel = text;
-			}
-
-			canvas->AddChild(subPanel);
+			GuiPanel::Sptr canPanel = canvas->Add<GuiPanel>();	
+			canPanel->SetTexture(ResourceManager::CreateAsset<Texture2D>("textures/StartScreen.png"));
 		}
 		
 		
-
+/*
 		GameObject::Sptr particles = scene->CreateGameObject("Particles"); 
 		{
 			particles->SetPostion({ -2.0f, 0.0f, 2.0f });

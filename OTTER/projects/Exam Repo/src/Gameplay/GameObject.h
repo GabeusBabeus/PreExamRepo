@@ -231,6 +231,8 @@ namespace Gameplay {
 		/// </summary>
 		void RenderGUI(); 
 
+		void GameObject::SetEnabled(bool enabled);
+
 		/// <summary>
 		/// Returns a pointer to the scene that this GameObject belongs to
 		/// </summary>

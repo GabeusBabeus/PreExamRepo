@@ -199,6 +199,16 @@ namespace Gameplay {
 		}
 	}
 
+	void GameObject::SetEnabled(bool enabled)
+	{
+		for (auto& component : _components) {
+			component->IsEnabled = enabled;
+		}
+		for (auto& child : _children) {
+			child->SetEnabled(enabled);
+		}
+	}
+
 	Scene* GameObject::GetScene() const {
 		return _scene;
 	}
