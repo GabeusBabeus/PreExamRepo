@@ -10,14 +10,18 @@ uniform layout(binding = 3) sampler2D s_SpecularAccumulation;
 uniform layout(binding = 4) sampler2D s_Emissive;
 
 #include "../fragments/frame_uniforms.glsl"
-#include "../fragments/color_correction.glsl"
 #include "../fragments/multiple_point_lights.glsl"
+#include "../fragments/light_correction.glsl"
 
 void main() {
     vec3 albedo = texture(s_Albedo, inUV).rgb;
     vec3 diffuse = texture(s_DiffuseAccumulation, inUV).rgb;
     vec3 specular = texture(s_SpecularAccumulation, inUV).rgb;
     vec4 emissive = texture(s_Emissive, inUV);
+
+     specular = SpecularCorrect(specular);
+     diffuse = DiffuseCorrect(diffuse);
+
 
 	outColor = vec4(albedo * (diffuse + specular + (emissive.rgb * emissive.a)), 1.0);
 }

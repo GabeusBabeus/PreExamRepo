@@ -32,6 +32,7 @@ layout (std140, binding = 2) uniform b_LightBlock {
 #include "../fragments/deferred_post_common.glsl"
 
 #include "../fragments/frame_uniforms.glsl"
+#include "../fragments/light_correction.glsl"
 
 // Calculates the contribution the given point light has 
 // for the current fragment
@@ -80,6 +81,11 @@ void main() {
         CalcPointLightContribution(viewPos, normal, Lights[ix], specularPow, diffuse, specular);
     }
 
+    diffuse = DiffuseCorrect(diffuse);
+    //specular = SpecularCorrect(specular);
+
     outDiffuse = vec4(diffuse, 1);
     outSpecular = vec4(specular, 1);
+    
+
 }
